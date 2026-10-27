@@ -1,0 +1,7 @@
+{
+  "id": "files",
+  "version": "0.1",
+  "title": "Files",
+  "description": "Browse the files of a floor's directories.",
+  "requires": { "tower": "1.97" }
+}

@@ -1,0 +1,6 @@
+body { margin: 0; background: var(--wall); color: var(--ink); font: var(--fs-l)/1.45 var(--ui); }
+.masthead { display: flex; align-items: baseline; gap: var(--sp-l); padding: var(--sp-m) var(--sp-xl); background: var(--panel); border-bottom: 1px solid var(--line); }
+h1 { margin: 0; font: 800 var(--fs-xl) var(--display); }
+.floor { color: var(--muted); font-size: var(--fs-m); }
+main { padding: var(--sp-xl); }
+.note { color: var(--muted); }
