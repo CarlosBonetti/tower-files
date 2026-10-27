@@ -39,7 +39,7 @@
                   "items": {
                     "type": "string"
                   },
-                  "description": "Paths relative to dir, tracked or untracked and not ignored, in name order."
+                  "description": "Paths relative to dir, in name order: in a git repo, tracked or untracked and not ignored; elsewhere, every file but those under .git and node_modules."
                 },
                 "error": {
                   "type": "string",

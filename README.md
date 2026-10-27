@@ -15,7 +15,7 @@ network; `npm run build -- --watch` while working on it. `renderer/src/files.js`
 ## The API
 
 `GET /files/tree/<project>` lists the files of the floor's hub, then its repos, as git sees each (tracked, and
-untracked but not ignored): `{ project, roots: [{ dir, files, error? }] }`, `files` relative to `dir` in name order.
+untracked but not ignored), or every file but those under `.git` and `node_modules` in a directory outside git: `{ project, roots: [{ dir, files, error? }] }`, `files` relative to `dir` in name order.
 `GET /files/file/<project>?dir=&path=` reads one: `{ dir, path, size, version, lang, text?, binary?, truncated? }`,
 `lang` the Shiki grammar its name calls for, the first 1 MB sent. `POST /files/write {project, dir, path, text, base}`
 saves an existing file, refused when it changed since `base`, the `version` it was read at; `tower x files write
@@ -29,8 +29,11 @@ In `~/.tower/config.json`:
 
 ```json
 "extensions": { "files": { "path": "/abs/path/to/tower-files" } },
-"renderers": { "files": { "root": "/abs/path/to/tower-files/renderer", "settings": { "project": "the-tower" } } },
-"projects": { "the-tower": { "shelf": [{ "label": "All files", "renderer": "files" }] } }
+"renderers": { "files": { "root": "/abs/path/to/tower-files/renderer", "settings": { "project": "my-app" } } },
+"projects": { "my-app": { "shelf": [{ "label": "All files", "renderer": "files" }] } }
 ```
+
+One renderer serves every floor: framed on a floor's shelf, the pane shows that floor's files, so each floor that wants
+it adds the same shelf entry. `settings.project` is the floor it shows when opened on its own, at `/r/files/`.
 
 `tower extensions check /abs/path/to/tower-files` reads the extension as the tower would.

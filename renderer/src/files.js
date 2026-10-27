@@ -7,8 +7,15 @@ import * as monaco from './monaco.js'
 
 const THEMES = { light: 'light-plus', dark: 'dark-plus' }
 
+// The floor: the one whose shelf frames the page, or the renderer's `settings.project` when it runs on its own.
 const { settings } = await tower.renderer()
-const project = settings.project
+const self = await new Promise((resolve) => {
+  const off = tower.subscribe((_board, self) => {
+    resolve(self)
+    queueMicrotask(() => off())
+  })
+})
+const project = self?.project ?? settings.project
 document.getElementById('floor').textContent = project
 
 // Framed, the page has an opaque origin, which can't start a worker from a URL: a blob of the same origin loads it.

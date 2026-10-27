@@ -1,9 +1,9 @@
 /**
  * The files extension: `tree/<project>` lists the files of a floor's hub and repos, each as git sees it (tracked,
- * and untracked but not ignored), so a renderer or a worker reads one floor's files in one call; `file/<project>`
+ * and untracked but not ignored) or, outside git, every file but those under `.git` and `node_modules`, so a renderer or a worker reads one floor's files in one call; `file/<project>`
  * reads one of them with the Shiki grammar its name calls for, and `write` saves one over the version it was read at.
  */
-import { open, stat, writeFile } from 'node:fs/promises'
+import { open, readdir, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { bundledLanguagesInfo } from 'shiki'
 
@@ -23,11 +23,24 @@ const langOf = (file: string): string => {
   return LANGS.get(base) ?? LANGS.get(path.extname(base).slice(1)) ?? 'text'
 }
 
+/** Folders a directory that isn't a git repo is listed without. */
+const SKIPPED = new Set(['.git', 'node_modules'])
+
+/** Every file below `dir` but those in SKIPPED folders, relative to it. */
+const walked = async (dir: string): Promise<string[]> => {
+  const entries = await readdir(dir, { recursive: true, withFileTypes: true })
+  return entries
+    .filter((entry) => entry.isFile())
+    .map((entry) => path.relative(dir, path.join(entry.parentPath, entry.name)))
+    .filter((file) => !file.split(path.sep).some((part) => SKIPPED.has(part)))
+}
+
+/** A git repo's files as git sees them; any other directory's walked. */
 const listed = async (ctx: any, dir: string): Promise<Root> => {
   const ran = await ctx.run(['git', 'ls-files', '--cached', '--others', '--exclude-standard', '-z'], { cwd: dir })
-  if (ran.exit !== 0) return { dir, files: [], error: ran.stderr.trim() || `git ls-files exited ${ran.exit}` }
-  const files = [...new Set<string>(ran.stdout.split('\0').filter(Boolean))].sort()
-  return { dir, files }
+  if (ran.exit !== 0 && !ran.stderr.includes('not a git repository')) return { dir, files: [], error: ran.stderr.trim() || `git ls-files exited ${ran.exit}` }
+  const files = ran.exit === 0 ? ran.stdout.split('\0').filter(Boolean) : await walked(dir)
+  return { dir, files: [...new Set(files)].sort() }
 }
 
 const floorOf = (ctx: any, project: string): Floor | Refusal =>
