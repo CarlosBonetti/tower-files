@@ -3,5 +3,31 @@
   "version": "0.1",
   "title": "Files",
   "description": "Browse the files of a floor's directories.",
-  "requires": { "tower": "1.97" }
+  "requires": { "tower": "1.97" },
+  "server": "server.ts",
+  "reads": {
+    "tree/<project>": {
+      "scope": "project",
+      "reply": {
+        "type": "object",
+        "required": ["project", "roots"],
+        "properties": {
+          "project": { "type": "string" },
+          "roots": {
+            "type": "array",
+            "description": "The floor's hub, then its repos, each with the files git sees in it.",
+            "items": {
+              "type": "object",
+              "required": ["dir", "files"],
+              "properties": {
+                "dir": { "type": "string", "description": "The absolute directory." },
+                "files": { "type": "array", "items": { "type": "string" }, "description": "Paths relative to dir, tracked or untracked and not ignored, in name order." },
+                "error": { "type": "string", "description": "Why its files could not be listed." }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }

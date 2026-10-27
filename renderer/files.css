@@ -4,3 +4,11 @@ h1 { margin: 0; font: 800 var(--fs-xl) var(--display); }
 .floor { color: var(--muted); font-size: var(--fs-m); }
 main { padding: var(--sp-xl); }
 .note { color: var(--muted); }
+.root + .root { margin-top: var(--sp-xl); }
+h2 { margin: 0 0 var(--sp-s); font: 800 var(--fs-l) var(--display); }
+h2 small { font: 400 var(--fs-s) var(--ui); color: var(--muted); }
+.tree { list-style: none; margin: 0; padding-left: var(--sp-l); font: var(--fs-m)/1.6 var(--mono); }
+.root > .tree { padding-left: 0; }
+summary.folder { cursor: pointer; color: var(--ink); }
+summary.folder::marker { color: var(--muted); }
+.file { display: inline-block; padding-left: 1.1em; color: var(--muted); }
