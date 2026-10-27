@@ -77,6 +77,47 @@ const drawRoot = ({ dir, files, error }) => {
   return section
 }
 
+// The splitter: drag it, or focus it and use the arrow keys, to size the tree; a double click resets it. The width
+// is view state, kept in tower.store under `files.treeWidth` for every page of the viewer's.
+
+const TREE_WIDTH = 'files.treeWidth'
+const panes = document.querySelector('.panes')
+const splitter = document.getElementById('splitter')
+const widthOf = (px) => Math.round(Math.min(Math.max(px, 160), panes.clientWidth - 240))
+const setWidth = (px) => {
+  const width = widthOf(px)
+  panes.style.setProperty('--tree-width', `${width}px`)
+  splitter.setAttribute('aria-valuenow', String(width))
+  return width
+}
+const treeWidth = () => document.getElementById('files').getBoundingClientRect().width
+const keepWidth = (px) => tower.store.set(TREE_WIDTH, px === undefined ? null : setWidth(px))
+
+const stored = await tower.store.get(TREE_WIDTH)
+if (stored) setWidth(stored)
+splitter.addEventListener('pointerdown', (down) => {
+  splitter.setPointerCapture(down.pointerId)
+  splitter.dataset.dragging = ''
+  const from = treeWidth() - down.clientX
+  const move = (event) => setWidth(from + event.clientX)
+  splitter.addEventListener('pointermove', move)
+  splitter.addEventListener('pointerup', (up) => {
+    splitter.removeEventListener('pointermove', move)
+    delete splitter.dataset.dragging
+    keepWidth(from + up.clientX)
+  }, { once: true })
+})
+splitter.addEventListener('dblclick', () => {
+  panes.style.removeProperty('--tree-width')
+  keepWidth(undefined)
+})
+splitter.addEventListener('keydown', (event) => {
+  const step = { ArrowLeft: -16, ArrowRight: 16 }[event.key]
+  if (!step) return
+  event.preventDefault()
+  keepWidth(treeWidth() + (event.shiftKey ? step * 4 : step))
+})
+
 // The editor.
 
 const highlighter = await createHighlighter({ themes: Object.values(THEMES), langs: [] })

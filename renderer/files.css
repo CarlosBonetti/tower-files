@@ -4,8 +4,13 @@ h1 { margin: 0; font: 800 var(--fs-xl) var(--display); }
 .floor { color: var(--muted); font-size: var(--fs-m); }
 .note { color: var(--muted); }
 
-.panes { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(14rem, 22rem) 1fr; }
-.files { overflow: auto; padding: var(--sp-l); border-right: 1px solid var(--line); }
+.panes { flex: 1; min-height: 0; display: grid; grid-template-columns: var(--tree-width, 20rem) 0 1fr; }
+.files { overflow: auto; padding: var(--sp-l); }
+/* A hairline between the panes, its grab area wider than it looks. */
+.splitter { position: relative; z-index: 1; border-left: 1px solid var(--line); cursor: col-resize; touch-action: none; }
+.splitter::before { content: ""; position: absolute; inset: 0 -4px; }
+.splitter:hover, .splitter:focus-visible, .splitter[data-dragging] { border-left: 2px solid var(--accent); outline: none; }
+body:has(.splitter[data-dragging]) { cursor: col-resize; user-select: none; }
 .root + .root { margin-top: var(--sp-xl); }
 h2 { margin: 0 0 var(--sp-s); font: 800 var(--fs-l) var(--display); }
 h2 small { font: 400 var(--fs-s) var(--ui); color: var(--muted); }
