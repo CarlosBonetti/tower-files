@@ -1,6 +1,6 @@
 # tower-files
 
-A file viewer for the tower: an extension (`extension.json`) and the "All files" pane, a renderer in `renderer/`
+A file viewer for [the tower](https://github.com/RegiByte/the-tower), the local HQ for many Claude Code sessions: an extension (`extension.json`) and the "All files" pane, a renderer in `renderer/`
 framed on a floor's shelf: the floor's files as a folding tree, and the one picked open in
 [Monaco](https://github.com/microsoft/monaco-editor), VS Code's editor, highlighted by [Shiki](https://shiki.style)
 with VS Code's TextMate grammars and its Light+ / Dark+ themes (through `@shikijs/monaco`). Cmd/Ctrl+S saves.
