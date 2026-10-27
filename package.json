@@ -15,5 +15,7 @@
   },
   "scripts": {
     "build": "node build.mjs"
-  }
+  },
+  "license": "MIT",
+  "description": "A file viewer and editor for the tower: a floor's files as a tree, opened in Monaco with VS Code's grammars."
 }
