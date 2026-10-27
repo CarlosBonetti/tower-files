@@ -5,12 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>All files</title>
 <link rel="stylesheet" href="/design.css">
+<link rel="stylesheet" href="out/files.css">
 <link rel="stylesheet" href="files.css">
 <script src="/tower.js"></script>
 </head>
 <body>
 <header class="masthead"><h1>All files</h1><span id="floor" class="floor"></span></header>
-<main id="files"><p class="note">The file viewer will live here.</p></main>
-<script type="module" src="files.js"></script>
+<div class="panes">
+  <nav id="files" class="files" aria-label="Files"><p class="note">Reading the floor's files…</p></nav>
+  <main class="viewer">
+    <div class="bar">
+      <span id="path" class="path"></span>
+      <span id="status" class="status" role="status"></span>
+      <button id="save" type="button" class="save" disabled title="Save (⌘S)">Save</button>
+    </div>
+    <p id="placeholder" class="note placeholder">Pick a file to open it.</p>
+    <div id="editor" class="editor"></div>
+  </main>
+</div>
+<script type="module" src="out/files.js"></script>
 </body>
 </html>

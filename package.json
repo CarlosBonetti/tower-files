@@ -1,0 +1,19 @@
+{
+  "name": "tower-files",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@shikijs/monaco": "^4.5.0",
+    "monaco-editor": "^0.57.0",
+    "shiki": "^4.5.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  },
+  "overrides": {
+    "dompurify": "^3.4.17"
+  },
+  "scripts": {
+    "build": "node build.mjs"
+  }
+}

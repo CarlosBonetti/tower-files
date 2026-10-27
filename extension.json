@@ -3,30 +3,169 @@
   "version": "0.1",
   "title": "Files",
   "description": "Browse the files of a floor's directories.",
-  "requires": { "tower": "1.97" },
+  "requires": {
+    "tower": "1.97"
+  },
   "server": "server.ts",
   "reads": {
     "tree/<project>": {
       "scope": "project",
       "reply": {
         "type": "object",
-        "required": ["project", "roots"],
+        "required": [
+          "project",
+          "roots"
+        ],
         "properties": {
-          "project": { "type": "string" },
+          "project": {
+            "type": "string"
+          },
           "roots": {
             "type": "array",
             "description": "The floor's hub, then its repos, each with the files git sees in it.",
             "items": {
               "type": "object",
-              "required": ["dir", "files"],
+              "required": [
+                "dir",
+                "files"
+              ],
               "properties": {
-                "dir": { "type": "string", "description": "The absolute directory." },
-                "files": { "type": "array", "items": { "type": "string" }, "description": "Paths relative to dir, tracked or untracked and not ignored, in name order." },
-                "error": { "type": "string", "description": "Why its files could not be listed." }
+                "dir": {
+                  "type": "string",
+                  "description": "The absolute directory."
+                },
+                "files": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Paths relative to dir, tracked or untracked and not ignored, in name order."
+                },
+                "error": {
+                  "type": "string",
+                  "description": "Why its files could not be listed."
+                }
               }
             }
           }
         }
+      }
+    },
+    "file/<project>": {
+      "scope": "project",
+      "query": {
+        "type": "object",
+        "required": [
+          "dir",
+          "path"
+        ],
+        "properties": {
+          "dir": {
+            "type": "string",
+            "description": "One of the floor's directories, as tree/<project> names it."
+          },
+          "path": {
+            "type": "string",
+            "description": "The file, relative to dir."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "dir",
+          "path",
+          "size",
+          "version",
+          "lang"
+        ],
+        "properties": {
+          "dir": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer",
+            "description": "Its size in bytes."
+          },
+          "lang": {
+            "type": "string",
+            "description": "The Shiki (TextMate) grammar its name calls for, 'text' for none."
+          },
+          "binary": {
+            "type": "boolean",
+            "description": "It holds a NUL byte: no text is sent."
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "Only its first 1 MB is sent."
+          },
+          "text": {
+            "type": "string",
+            "description": "Its contents as UTF-8, absent for a binary file."
+          },
+          "version": {
+            "type": "number",
+            "description": "When it was last modified, epoch ms: the base files/write takes."
+          }
+        }
+      }
+    }
+  },
+  "verbs": {
+    "write": {
+      "scope": "project",
+      "input": {
+        "type": "object",
+        "required": [
+          "project",
+          "dir",
+          "path",
+          "text",
+          "base"
+        ],
+        "properties": {
+          "project": {
+            "type": "string"
+          },
+          "dir": {
+            "type": "string",
+            "description": "One of the floor's directories."
+          },
+          "path": {
+            "type": "string",
+            "description": "The file, relative to dir: an existing one."
+          },
+          "text": {
+            "type": "string",
+            "description": "Its new contents, UTF-8."
+          },
+          "base": {
+            "type": "number",
+            "description": "The version read: refused when the file changed since."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "size",
+          "version"
+        ],
+        "properties": {
+          "size": {
+            "type": "integer"
+          },
+          "version": {
+            "type": "number"
+          }
+        }
+      },
+      "words": {
+        "label": "Save",
+        "hint": "writes a file of the floor"
       }
     }
   }
