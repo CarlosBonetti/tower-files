@@ -5,6 +5,8 @@ framed on a floor's shelf: the floor's files as a folding tree, and the one pick
 [Monaco](https://github.com/microsoft/monaco-editor), VS Code's editor, highlighted by [Shiki](https://shiki.style)
 with VS Code's TextMate grammars and its Light+ / Dark+ themes (through `@shikijs/monaco`). Cmd/Ctrl+S saves.
 
+![All files on the tower's own floor: its tree, with src/tower/server.ts open in Monaco](docs/screenshot.png)
+
 ## Build
 
 `npm install && npm run build` bundles the pane into `renderer/out/` (git-ignored), so it loads nothing from the
