@@ -7,6 +7,126 @@
     "tower": "1.97"
   },
   "server": "server.ts",
+  "settings": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "editor": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "The editor's options, as Monaco (VS Code's editor) names them.",
+        "properties": {
+          "wordWrap": {
+            "enum": [
+              "off",
+              "on",
+              "wordWrapColumn",
+              "bounded"
+            ],
+            "default": "off",
+            "description": "How long lines wrap: not at all, at the editor's width, at wordWrapColumn, or at whichever of the two comes first."
+          },
+          "wordWrapColumn": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 80,
+            "description": "The column lines wrap at, under wordWrapColumn or bounded."
+          }
+        },
+        "default": {}
+      }
+    }
+  },
+  "folds": {
+    "floor": {
+      "x": {
+        "type": "object",
+        "required": [
+          "editor"
+        ],
+        "properties": {
+          "editor": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "The editor's options, as Monaco (VS Code's editor) names them.",
+            "properties": {
+              "wordWrap": {
+                "enum": [
+                  "off",
+                  "on",
+                  "wordWrapColumn",
+                  "bounded"
+                ],
+                "default": "off",
+                "description": "How long lines wrap: not at all, at the editor's width, at wordWrapColumn, or at whichever of the two comes first."
+              },
+              "wordWrapColumn": {
+                "type": "integer",
+                "minimum": 1,
+                "default": 80,
+                "description": "The column lines wrap at, under wordWrapColumn or bounded."
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "verbs": {
+    "write": {
+      "scope": "project",
+      "input": {
+        "type": "object",
+        "required": [
+          "project",
+          "dir",
+          "path",
+          "text",
+          "base"
+        ],
+        "properties": {
+          "project": {
+            "type": "string"
+          },
+          "dir": {
+            "type": "string",
+            "description": "One of the floor's directories."
+          },
+          "path": {
+            "type": "string",
+            "description": "The file, relative to dir: an existing one."
+          },
+          "text": {
+            "type": "string",
+            "description": "Its new contents, UTF-8."
+          },
+          "base": {
+            "type": "number",
+            "description": "The version read: refused when the file changed since."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "size",
+          "version"
+        ],
+        "properties": {
+          "size": {
+            "type": "integer"
+          },
+          "version": {
+            "type": "number"
+          }
+        }
+      },
+      "words": {
+        "label": "Save",
+        "hint": "writes a file of the floor"
+      }
+    }
+  },
   "reads": {
     "roots/<project>": {
       "scope": "project",
@@ -152,61 +272,6 @@
             "description": "When it was last modified, epoch ms: the base files/write takes."
           }
         }
-      }
-    }
-  },
-  "verbs": {
-    "write": {
-      "scope": "project",
-      "input": {
-        "type": "object",
-        "required": [
-          "project",
-          "dir",
-          "path",
-          "text",
-          "base"
-        ],
-        "properties": {
-          "project": {
-            "type": "string"
-          },
-          "dir": {
-            "type": "string",
-            "description": "One of the floor's directories."
-          },
-          "path": {
-            "type": "string",
-            "description": "The file, relative to dir: an existing one."
-          },
-          "text": {
-            "type": "string",
-            "description": "Its new contents, UTF-8."
-          },
-          "base": {
-            "type": "number",
-            "description": "The version read: refused when the file changed since."
-          }
-        }
-      },
-      "reply": {
-        "type": "object",
-        "required": [
-          "size",
-          "version"
-        ],
-        "properties": {
-          "size": {
-            "type": "integer"
-          },
-          "version": {
-            "type": "number"
-          }
-        }
-      },
-      "words": {
-        "label": "Save",
-        "hint": "writes a file of the floor"
       }
     }
   }

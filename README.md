@@ -13,6 +13,22 @@ with VS Code's TextMate grammars and its Light+ / Dark+ themes (through `@shikij
 `npm install && npm run build` bundles the pane into `renderer/out/` (git-ignored), so it loads nothing from the
 network; `npm run build -- --watch` while working on it. `renderer/src/files.js` is the page.
 
+## Settings
+
+Set in the tower's config, for every floor under `extensions.files.settings`, and for one floor under
+`projects.<id>.extensions.files.settings`, which overrides the first key by key (`tower config check` checks both):
+
+```json
+"extensions": { "files": { "path": "/abs/path/to/tower-files", "settings": { "editor": { "wordWrap": "on" } } } }
+```
+
+| Key | Takes | Unset |
+|---|---|---|
+| `editor.wordWrap` | `off`, `on` (at the editor's width), `wordWrapColumn` (at `wordWrapColumn`) or `bounded` (whichever comes first) | `off` |
+| `editor.wordWrapColumn` | The column lines wrap at, under `wordWrapColumn` or `bounded` | `80` |
+
+Each floor's are on the board as `floor.x.files.editor`, so an open pane follows an edit at once.
+
 ## The API
 
 `GET /files/roots/<project>` names the floor's directories, its hub then its repos: `{ project, roots }`.

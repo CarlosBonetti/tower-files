@@ -2,7 +2,7 @@
  * The files extension: `roots/<project>` names a floor's directories, its hub and repos; `entries/<project>` lists a
  * folder of one, everything in it, marking what git ignores, so a tree loads a folder when it is opened, however big
  * (node_modules too); `file/<project>` reads a file with the Shiki grammar its name calls for, and `write` saves one
- * over the version it was read at.
+ * over the version it was read at. Each floor's `editor` settings are folded onto the board for the pane.
  */
 import { open, readdir, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -62,6 +62,10 @@ const placed = (floor: Floor, dir: string, file: string): string | Refusal => {
 }
 
 const start = (ctx: any) => ({
+  folds: {
+    /** The floor's editor settings on the board, `floor.x.files.editor`, so an open pane follows a config edit. */
+    floor: (_floor: Floor, { settings }: { settings: { editor?: object } }) => ({ x: { editor: settings.editor ?? {} } }),
+  },
   verbs: {
     write: async ({ project, dir, path: file, text, base }: { project: string; dir: string; path: string; text: string; base: number }) => {
       const floor = floorOf(ctx, project)

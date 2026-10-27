@@ -9,10 +9,14 @@ const THEMES = { light: 'light-plus', dark: 'dark-plus' }
 
 // The floor: the one whose shelf frames the page, or the renderer's `settings.project` when it runs on its own.
 const { settings } = await tower.renderer()
+// The board is followed for the floor's editor settings (`x.files.editor`), applied once the editor is up.
+let onBoard = () => {}
+let board
 const shelf = await new Promise((resolve) => {
-  const off = tower.subscribe((_board, entry) => {
+  tower.subscribe((latest, entry) => {
+    board = latest
     resolve(entry)
-    queueMicrotask(() => off())
+    onBoard()
   })
 })
 const project = shelf?.project ?? settings.project
@@ -126,6 +130,10 @@ const highlight = () => {
   shikiToMonaco(highlighter, monaco)
   monaco.editor.setTheme(themeOf(tower.scheme()))
 }
+
+// Every option the settings take is there, defaults filled in, so a setting taken out of the config goes back to its default.
+onBoard = () => editor.updateOptions(board.floors.find((f) => f.id === project).x.files.editor)
+onBoard()
 highlight()
 tower.onScheme((scheme) => monaco.editor.setTheme(themeOf(scheme)))
 
