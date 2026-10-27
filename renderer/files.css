@@ -13,7 +13,7 @@ h1 { margin: 0; font: 800 var(--fs-xl) var(--display); }
 body:has(.splitter[data-dragging]) { cursor: col-resize; user-select: none; }
 .root + .root { margin-top: var(--sp-xl); }
 h2 { margin: 0 0 var(--sp-s); font: 800 var(--fs-l) var(--display); }
-h2 small { font: 400 var(--fs-s) var(--ui); color: var(--muted); }
+h2 small { font: 400 var(--fs-s) var(--ui); color: var(--muted); overflow-wrap: anywhere; }
 .tree { list-style: none; margin: 0; padding-left: var(--sp-l); font: var(--fs-m)/1.6 var(--mono); white-space: nowrap; }
 .root > .tree { padding-left: 0; }
 summary.folder { cursor: pointer; }
@@ -22,6 +22,10 @@ summary.folder::marker { color: var(--muted); }
 .file:hover { color: var(--ink); }
 .file:focus-visible { outline: 2px solid var(--accent); }
 .file[aria-current] { color: var(--ink); background: var(--panel-2); }
+/* What git ignores, and everything below it, dimmed. */
+.ignored { opacity: .5; }
+.ignored .ignored { opacity: 1; }
+.tree > .note { padding-left: 1.1em; font-size: var(--fs-s); }
 
 .viewer { min-width: 0; display: flex; flex-direction: column; }
 .bar { display: flex; align-items: center; gap: var(--sp-m); min-height: var(--control); padding: var(--sp-s) var(--sp-l); border-bottom: 1px solid var(--line); font-size: var(--fs-m); }

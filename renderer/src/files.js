@@ -1,6 +1,6 @@
-// The "All files" pane: a renderer framed on a floor's shelf. The floor's files as a folding tree
-// (`files/tree/<project>`), and the one picked open in Monaco, VS Code's editor, highlighted by Shiki with VS Code's
-// TextMate grammars and Light+ / Dark+ themes; Cmd/Ctrl+S saves it through `files/write`.
+// The "All files" pane: a renderer framed on a floor's shelf. Everything in the floor's directories as a folding
+// tree, and the file picked open in Monaco, VS Code's editor, highlighted by Shiki with VS Code's TextMate grammars
+// and Light+ / Dark+ themes; Cmd/Ctrl+S saves it through `files/write`.
 import { shikiToMonaco } from '@shikijs/monaco'
 import { createHighlighter } from 'shiki'
 import * as monaco from './monaco.js'
@@ -9,13 +9,13 @@ const THEMES = { light: 'light-plus', dark: 'dark-plus' }
 
 // The floor: the one whose shelf frames the page, or the renderer's `settings.project` when it runs on its own.
 const { settings } = await tower.renderer()
-const self = await new Promise((resolve) => {
-  const off = tower.subscribe((_board, self) => {
-    resolve(self)
+const shelf = await new Promise((resolve) => {
+  const off = tower.subscribe((_board, entry) => {
+    resolve(entry)
     queueMicrotask(() => off())
   })
 })
-const project = self?.project ?? settings.project
+const project = shelf?.project ?? settings.project
 document.getElementById('floor').textContent = project
 
 // Framed, the page has an opaque origin, which can't start a worker from a URL: a blob of the same origin loads it.
@@ -29,44 +29,30 @@ const el = (tag, cls, text) => {
   return node
 }
 
-// The tree.
+// The tree: each folder's entries read when it is first opened (`files/entries/<project>`), so it shows everything,
+// node_modules too, at the cost of one read per folder opened. What git ignores is dimmed, as VS Code's explorer does.
 
-/** Nests a root's paths: a folder is a Map of its entries, a file null. */
-const nest = (files) => {
-  const top = new Map()
-  for (const path of files) {
-    const parts = path.split('/')
-    let at = top
-    for (const part of parts.slice(0, -1)) {
-      if (!at.has(part)) at.set(part, new Map())
-      at = at.get(part)
-    }
-    at.set(parts.at(-1), null)
-  }
-  return top
-}
+const entriesOf = (dir, path) =>
+  tower.get(`files/entries/${encodeURIComponent(project)}?${new URLSearchParams({ dir, path })}`)
 
-/** Folders first, then files, each in name order. */
-const entries = (folder) =>
-  [...folder].sort(([a, av], [b, bv]) => (av === null) - (bv === null) || a.localeCompare(b))
-
-const drawFolder = (dir, folder, prefix) => {
+const drawFolder = async (dir, path) => {
   const list = el('ul', 'tree')
-  for (const [name, inner] of entries(folder)) {
+  const { entries } = await entriesOf(dir, path)
+  if (!entries.length) list.append(el('li', 'note', 'Empty'))
+  for (const { name, kind, ignored } of entries) {
     const item = el('li')
-    const path = prefix + name
-    if (inner === null) {
+    if (ignored) item.className = 'ignored'
+    const at = path ? `${path}/${name}` : name
+    if (kind === 'file') {
       const file = el('button', 'file', name)
       file.type = 'button'
-      file.dataset.key = `${dir}/${path}`
-      file.addEventListener('click', () => openFile(dir, path))
+      file.dataset.key = `${dir}/${at}`
+      file.addEventListener('click', () => openFile(dir, at))
       item.append(file)
     } else {
       const details = el('details')
       details.append(el('summary', 'folder', name))
-      details.addEventListener('toggle', () => {
-        if (details.open && details.childElementCount === 1) details.append(drawFolder(dir, inner, `${path}/`))
-      }, { once: true })
+      details.addEventListener('toggle', async () => details.append(await drawFolder(dir, at)), { once: true })
       item.append(details)
     }
     list.append(item)
@@ -74,13 +60,11 @@ const drawFolder = (dir, folder, prefix) => {
   return list
 }
 
-const drawRoot = ({ dir, files, error }) => {
+const drawRoot = async (dir) => {
   const section = el('section', 'root')
   const head = el('h2', undefined, dir.split('/').at(-1))
-  head.title = dir
-  head.append(el('small', undefined, ` ${files.length} files`))
-  section.append(head)
-  section.append(error ? el('p', 'note', error) : drawFolder(dir, nest(files), ''))
+  head.append(el('small', undefined, ` ${dir}`))
+  section.append(head, await drawFolder(dir, ''))
   return section
 }
 
@@ -246,5 +230,5 @@ addEventListener('beforeunload', (event) => {
   if ([...opened.values()].some(dirty)) event.preventDefault()
 })
 
-const { roots } = await tower.get(`files/tree/${encodeURIComponent(project)}`)
-document.getElementById('files').replaceChildren(...roots.map(drawRoot))
+const { roots } = await tower.get(`files/roots/${encodeURIComponent(project)}`)
+document.getElementById('files').replaceChildren(...(await Promise.all(roots.map(drawRoot))))

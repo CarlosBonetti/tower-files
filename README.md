@@ -1,7 +1,8 @@
 # tower-files
 
 A file viewer for [the tower](https://github.com/RegiByte/the-tower), the local HQ for many Claude Code sessions: an extension (`extension.json`) and the "All files" pane, a renderer in `renderer/`
-framed on a floor's shelf: the floor's files as a folding tree, and the one picked open in
+framed on a floor's shelf: everything in the floor's directories as a folding tree, what git ignores dimmed, and
+the file picked open in
 [Monaco](https://github.com/microsoft/monaco-editor), VS Code's editor, highlighted by [Shiki](https://shiki.style)
 with VS Code's TextMate grammars and its Light+ / Dark+ themes (through `@shikijs/monaco`). Cmd/Ctrl+S saves.
 
@@ -14,14 +15,16 @@ network; `npm run build -- --watch` while working on it. `renderer/src/files.js`
 
 ## The API
 
-`GET /files/tree/<project>` lists the files of the floor's hub, then its repos, as git sees each (tracked, and
-untracked but not ignored), or every file but those under `.git` and `node_modules` in a directory outside git: `{ project, roots: [{ dir, files, error? }] }`, `files` relative to `dir` in name order.
+`GET /files/roots/<project>` names the floor's directories, its hub then its repos: `{ project, roots }`.
+`GET /files/entries/<project>?dir=&path=` lists one folder of one (the top without `path`): everything in it but
+`.git` and `.DS_Store`, node_modules too, folders first, each in name order, what git ignores marked:
+`{ dir, path, entries: [{ name, kind: 'dir' | 'file', ignored? }] }`. The pane reads a folder when it is opened.
 `GET /files/file/<project>?dir=&path=` reads one: `{ dir, path, size, version, lang, text?, binary?, truncated? }`,
 `lang` the Shiki grammar its name calls for, the first 1 MB sent. `POST /files/write {project, dir, path, text, base}`
 saves an existing file, refused when it changed since `base`, the `version` it was read at; `tower x files write
 '<json>'` from a worker. Each takes only a directory of the floor and a path inside it.
 
-A page reads them with `tower.get('files/tree/<project>')` and `tower.call('files/write', …)`; after editing `server.ts`, `tower extensions restart files`.
+A page reads them with `tower.get('files/entries/<project>?…')` and `tower.call('files/write', …)`; after editing `server.ts`, `tower extensions restart files`.
 
 ## Install
 

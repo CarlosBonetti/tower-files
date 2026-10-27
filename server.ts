@@ -1,46 +1,52 @@
 /**
- * The files extension: `tree/<project>` lists the files of a floor's hub and repos, each as git sees it (tracked,
- * and untracked but not ignored) or, outside git, every file but those under `.git` and `node_modules`, so a renderer or a worker reads one floor's files in one call; `file/<project>`
- * reads one of them with the Shiki grammar its name calls for, and `write` saves one over the version it was read at.
+ * The files extension: `roots/<project>` names a floor's directories, its hub and repos; `entries/<project>` lists a
+ * folder of one, everything in it, marking what git ignores, so a tree loads a folder when it is opened, however big
+ * (node_modules too); `file/<project>` reads a file with the Shiki grammar its name calls for, and `write` saves one
+ * over the version it was read at.
  */
 import { open, readdir, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { bundledLanguagesInfo } from 'shiki'
 
-type Root = { dir: string; files: string[]; error?: string }
 type Floor = { id: string; hub: string; repos: string[] }
 type Refusal = { t: 'error'; code: string; message: string }
+type Entry = { name: string; kind: 'dir' | 'file'; ignored?: true }
 
 const SEND_BYTES = 1024 * 1024
+
+/** What a folder is listed without, as VS Code's explorer hides them. */
+const HIDDEN = new Set(['.git', '.DS_Store'])
 
 /** Grammars by what names a file: its extension or alias (`ts`, `yml`) and its whole name (`Dockerfile`). */
 const LANGS = new Map<string, string>()
 for (const { id, aliases } of bundledLanguagesInfo) for (const name of [id, ...(aliases ?? [])]) LANGS.set(name.toLowerCase(), id)
-for (const [name, id] of Object.entries({ dockerfile: 'docker', makefile: 'make', '.gitignore': 'ignore', license: 'text', mjs: 'js', cjs: 'js', mts: 'ts', cts: 'ts', jsonl: 'json' })) LANGS.set(name, id)
+for (const [name, id] of Object.entries({ dockerfile: 'docker', makefile: 'make', license: 'text', mjs: 'js', cjs: 'js', mts: 'ts', cts: 'ts', jsonl: 'json' })) LANGS.set(name, LANGS.get(id) ?? id)
 
 const langOf = (file: string): string => {
   const base = path.basename(file).toLowerCase()
   return LANGS.get(base) ?? LANGS.get(path.extname(base).slice(1)) ?? 'text'
 }
 
-/** Folders a directory that isn't a git repo is listed without. */
-const SKIPPED = new Set(['.git', 'node_modules'])
-
-/** Every file below `dir` but those in SKIPPED folders, relative to it. */
-const walked = async (dir: string): Promise<string[]> => {
-  const entries = await readdir(dir, { recursive: true, withFileTypes: true })
-  return entries
-    .filter((entry) => entry.isFile())
-    .map((entry) => path.relative(dir, path.join(entry.parentPath, entry.name)))
-    .filter((file) => !file.split(path.sep).some((part) => SKIPPED.has(part)))
+/** The paths of `paths` (relative to `dir`, a folder's with a trailing slash) git ignores; none outside a repo. */
+const ignoredOf = async (ctx: any, dir: string, paths: string[]): Promise<Set<string>> => {
+  if (!paths.length) return new Set()
+  const ran = await ctx.run(['git', 'check-ignore', '-z', '--stdin'], { cwd: dir, stdin: paths.join('\0') + '\0' })
+  return new Set(ran.exit === 0 ? ran.stdout.split('\0').filter(Boolean) : [])
 }
 
-/** A git repo's files as git sees them; any other directory's walked. */
-const listed = async (ctx: any, dir: string): Promise<Root> => {
-  const ran = await ctx.run(['git', 'ls-files', '--cached', '--others', '--exclude-standard', '-z'], { cwd: dir })
-  if (ran.exit !== 0 && !ran.stderr.includes('not a git repository')) return { dir, files: [], error: ran.stderr.trim() || `git ls-files exited ${ran.exit}` }
-  const files = ran.exit === 0 ? ran.stdout.split('\0').filter(Boolean) : await walked(dir)
-  return { dir, files: [...new Set(files)].sort() }
+/** A folder's entries, a link taken as the kind it points at. */
+const entriesOf = async (ctx: any, dir: string, folder: string, rel: string): Promise<Entry[]> => {
+  const dirents = (await readdir(folder, { withFileTypes: true })).filter((dirent) => !HIDDEN.has(dirent.name))
+  const kinds = await Promise.all(dirents.map(async (dirent): Promise<Entry['kind']> => {
+    if (!dirent.isSymbolicLink()) return dirent.isDirectory() ? 'dir' : 'file'
+    const target = await stat(path.join(folder, dirent.name)).catch(() => undefined)
+    return target?.isDirectory() ? 'dir' : 'file'
+  }))
+  const pathOf = (name: string, kind: Entry['kind']) => (rel ? `${rel}/` : '') + name + (kind === 'dir' ? '/' : '')
+  const ignored = await ignoredOf(ctx, dir, dirents.map((dirent, i) => pathOf(dirent.name, kinds[i])))
+  return dirents
+    .map((dirent, i): Entry => ({ name: dirent.name, kind: kinds[i], ...(ignored.has(pathOf(dirent.name, kinds[i])) && { ignored: true as const }) }))
+    .sort((a, b) => (a.kind === 'file' ? 1 : 0) - (b.kind === 'file' ? 1 : 0) || a.name.localeCompare(b.name))
 }
 
 const floorOf = (ctx: any, project: string): Floor | Refusal =>
@@ -71,11 +77,20 @@ const start = (ctx: any) => ({
     },
   },
   reads: {
-    'tree/<project>': async ({ params }: { params: { project: string } }) => {
+    'roots/<project>': ({ params }: { params: { project: string } }) => {
       const floor = floorOf(ctx, params.project)
       if ('t' in floor) return floor
-      const roots = await Promise.all([floor.hub, ...floor.repos].map((dir) => listed(ctx, dir)))
-      return { project: params.project, roots }
+      return { project: params.project, roots: [floor.hub, ...floor.repos] }
+    },
+    'entries/<project>': async ({ params, query }: { params: { project: string }; query: { dir: string; path?: string } }) => {
+      const floor = floorOf(ctx, params.project)
+      if ('t' in floor) return floor
+      const rel = query.path ?? ''
+      const full = placed(floor, query.dir, rel)
+      if (typeof full !== 'string') return full
+      const entries = await entriesOf(ctx, query.dir, full, rel).catch(() => undefined)
+      if (!entries) return { t: 'error', code: 'not_found', message: `no folder ${rel || '.'} in ${query.dir}` }
+      return { dir: query.dir, path: rel, entries }
     },
     'file/<project>': async ({ params, query }: { params: { project: string }; query: { dir: string; path: string } }) => {
       const floor = floorOf(ctx, params.project)

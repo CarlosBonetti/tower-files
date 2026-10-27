@@ -8,7 +8,7 @@
   },
   "server": "server.ts",
   "reads": {
-    "tree/<project>": {
+    "roots/<project>": {
       "scope": "project",
       "reply": {
         "type": "object",
@@ -22,28 +22,69 @@
           },
           "roots": {
             "type": "array",
-            "description": "The floor's hub, then its repos, each with the files git sees in it.",
+            "description": "The floor's hub, then its repos.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "entries/<project>": {
+      "scope": "project",
+      "query": {
+        "type": "object",
+        "required": [
+          "dir"
+        ],
+        "properties": {
+          "dir": {
+            "type": "string",
+            "description": "One of the floor's directories, as roots/<project> names it."
+          },
+          "path": {
+            "type": "string",
+            "description": "A folder in it, relative to dir; the top when left out."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "dir",
+          "path",
+          "entries"
+        ],
+        "properties": {
+          "dir": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "entries": {
+            "type": "array",
+            "description": "Everything in the folder but .git and .DS_Store, folders first, each in name order.",
             "items": {
               "type": "object",
               "required": [
-                "dir",
-                "files"
+                "name",
+                "kind"
               ],
               "properties": {
-                "dir": {
-                  "type": "string",
-                  "description": "The absolute directory."
+                "name": {
+                  "type": "string"
                 },
-                "files": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  },
-                  "description": "Paths relative to dir, in name order: in a git repo, tracked or untracked and not ignored; elsewhere, every file but those under .git and node_modules."
+                "kind": {
+                  "enum": [
+                    "dir",
+                    "file"
+                  ],
+                  "description": "A link is the kind it points at; a broken one a file."
                 },
-                "error": {
-                  "type": "string",
-                  "description": "Why its files could not be listed."
+                "ignored": {
+                  "type": "boolean",
+                  "description": "Git ignores it: true only in a git repo, and only where git says so of the entry itself (what an ignored folder holds is ignored with it)."
                 }
               }
             }
